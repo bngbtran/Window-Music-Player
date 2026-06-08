@@ -1,0 +1,41 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "WindowMusicPlayer/1.0.0": {
+        "dependencies": {
+          "WPF.UI": "3.4.2.7"
+        },
+        "runtime": {
+          "WindowMusicPlayer.dll": {}
+        }
+      },
+      "WPF.UI/3.4.2.7": {
+        "runtime": {
+          "lib/net451/WPF.UI.dll": {
+            "assemblyVersion": "3.4.2.7",
+            "fileVersion": "3.4.2.7"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "WindowMusicPlayer/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "WPF.UI/3.4.2.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sE+BGb+mFJB96wQ8wArVBqoUQkj1/vOV7GdFb1iWD5Y8iwHSIX83aEcda5gxzCOH2h5ifD9ul7JEm7mvohbgMg==",
+      "path": "wpf.ui/3.4.2.7",
+      "hashPath": "wpf.ui.3.4.2.7.nupkg.sha512"
+    }
+  }
+}
