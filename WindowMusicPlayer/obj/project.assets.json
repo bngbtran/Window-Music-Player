@@ -2,39 +2,62 @@
   "version": 3,
   "targets": {
     "net8.0-windows7.0": {
-      "WPF.UI/3.4.2.7": {
+      "WPF-UI/3.0.4": {
         "type": "package",
         "compile": {
-          "lib/net451/WPF.UI.dll": {
-            "related": ".md"
+          "lib/net8.0-windows7.0/Wpf.Ui.dll": {
+            "related": ".pdb;.xml"
           }
         },
         "runtime": {
-          "lib/net451/WPF.UI.dll": {
-            "related": ".md"
+          "lib/net8.0-windows7.0/Wpf.Ui.dll": {
+            "related": ".pdb;.xml"
           }
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.WindowsDesktop.App.WPF"
+        ]
       }
     }
   },
   "libraries": {
-    "WPF.UI/3.4.2.7": {
-      "sha512": "sE+BGb+mFJB96wQ8wArVBqoUQkj1/vOV7GdFb1iWD5Y8iwHSIX83aEcda5gxzCOH2h5ifD9ul7JEm7mvohbgMg==",
+    "WPF-UI/3.0.4": {
+      "sha512": "Jbt8nJ4MSC/WBhqx6iXOW06Rt2UUNVxA8+23AOSM63jlOIhU6e6P4BIw8rL/UnRPycOdA2vntYl5i7k53E0AGg==",
       "type": "package",
-      "path": "wpf.ui/3.4.2.7",
+      "path": "wpf-ui/3.0.4",
+      "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "lib/net451/WPF.UI.dll",
-        "lib/net451/WPF.UI.md",
-        "wpf.ui.3.4.2.7.nupkg.sha512",
-        "wpf.ui.nuspec"
+        "README.md",
+        "lib/net462/Wpf.Ui.dll",
+        "lib/net462/Wpf.Ui.pdb",
+        "lib/net462/Wpf.Ui.xml",
+        "lib/net472/Wpf.Ui.dll",
+        "lib/net472/Wpf.Ui.pdb",
+        "lib/net472/Wpf.Ui.xml",
+        "lib/net481/Wpf.Ui.dll",
+        "lib/net481/Wpf.Ui.pdb",
+        "lib/net481/Wpf.Ui.xml",
+        "lib/net6.0-windows7.0/Wpf.Ui.dll",
+        "lib/net6.0-windows7.0/Wpf.Ui.pdb",
+        "lib/net6.0-windows7.0/Wpf.Ui.xml",
+        "lib/net7.0-windows7.0/Wpf.Ui.dll",
+        "lib/net7.0-windows7.0/Wpf.Ui.pdb",
+        "lib/net7.0-windows7.0/Wpf.Ui.xml",
+        "lib/net8.0-windows7.0/Wpf.Ui.dll",
+        "lib/net8.0-windows7.0/Wpf.Ui.pdb",
+        "lib/net8.0-windows7.0/Wpf.Ui.xml",
+        "tools/VisualStudioToolsManifest.xml",
+        "wpf-ui.3.0.4.nupkg.sha512",
+        "wpf-ui.nuspec",
+        "wpfui.png"
       ]
     }
   },
   "projectFileDependencyGroups": {
     "net8.0-windows7.0": [
-      "WPF.UI >= 3.4.2.7"
+      "WPF-UI >= 3.0.4"
     ]
   },
   "packageFolders": {
@@ -43,11 +66,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Window-Music-Player\\WindowMusicPlayer\\WindowMusicPlayer.csproj",
+      "projectUniqueName": "d:\\Window-Music-Player\\WindowMusicPlayer\\WindowMusicPlayer.csproj",
       "projectName": "WindowMusicPlayer",
-      "projectPath": "D:\\Window-Music-Player\\WindowMusicPlayer\\WindowMusicPlayer.csproj",
+      "projectPath": "d:\\Window-Music-Player\\WindowMusicPlayer\\WindowMusicPlayer.csproj",
       "packagesPath": "C:\\Users\\bngbtran\\.nuget\\packages\\",
-      "outputPath": "D:\\Window-Music-Player\\WindowMusicPlayer\\obj\\",
+      "outputPath": "d:\\Window-Music-Player\\WindowMusicPlayer\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\bngbtran\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -79,9 +102,9 @@
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
         "dependencies": {
-          "WPF.UI": {
+          "WPF-UI": {
             "target": "Package",
-            "version": "[3.4.2.7, )"
+            "version": "[3.0.4, )"
           }
         },
         "imports": [
@@ -106,17 +129,5 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.420/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'WPF.UI 3.4.2.7' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8, .NETFramework,Version=v4.8.1' instead of the project target framework 'net8.0-windows7.0'. This package may not be fully compatible with your project.",
-      "libraryId": "WPF.UI",
-      "targetGraphs": [
-        "net8.0-windows7.0"
-      ]
-    }
-  ]
+  }
 }

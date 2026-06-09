@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -8,20 +8,23 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Forms;
+using Wpf.Ui.Controls;
 
 namespace WindowMusicPlayer;
 
-public partial class MainWindow : Window
+public partial class MainWindow : FluentWindow
 {
     private readonly ObservableCollection<Track> _allTracks = new();
     private readonly ObservableCollection<Track> _displayedTracks = new();
     private readonly Dictionary<string, List<Track>> _playlists = new();
     private readonly MediaPlayer _mediaPlayer = new();
     private readonly DispatcherTimer _positionTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
+    private readonly Stack<Track> _history = new();
     private Queue<Track> _shuffleQueue = new();
     private string _rootFolder = string.Empty;
     private Track? _currentTrack;
     private bool _isSeeking;
+    private bool _isPlaying;
     private bool _loopSingle;
 
     public MainWindow()
@@ -104,12 +107,12 @@ public partial class MainWindow : Window
         var hasTracks = _allTracks.Count > 0;
         BtnShuffleAll.IsEnabled = hasTracks;
         BtnShufflePlaylist.IsEnabled = hasTracks;
-        BtnPlay.IsEnabled = hasTracks;
-        BtnPause.IsEnabled = hasTracks;
-        BtnStop.IsEnabled = hasTracks;
+        BtnPlayPause.IsEnabled = hasTracks;
         BtnNext.IsEnabled = _shuffleQueue.Any();
+        BtnPrevious.IsEnabled = hasTracks;
         BtnLoopOne.IsEnabled = hasTracks;
         UpdateLoopButtonStyle();
+        UpdatePlayPauseIcon();
     }
 
     private void PlaylistCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -135,45 +138,63 @@ public partial class MainWindow : Window
             : $"Showing {_displayedTracks.Count} tracks in playlist: {selected}.";
     }
 
-    private void SongsListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (SongsListView.SelectedItem is Track selectedTrack)
-        {
-            _currentTrack = selectedTrack;
-            TxtCurrentTrack.Text = selectedTrack.Name;
-        }
-    }
-
     private void SongsListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (SongsListView.SelectedItem is Track selectedTrack)
-        {
-            _currentTrack = selectedTrack;
             PlayTrack(selectedTrack);
-        }
     }
 
-    private void BtnPlay_Click(object sender, RoutedEventArgs e)
+    private void BtnPlayPause_Click(object sender, RoutedEventArgs e)
     {
-        if (_currentTrack is null)
+        if (_isPlaying)
         {
-            if (_displayedTracks.Count == 0)
-                return;
-
-            _currentTrack = _displayedTracks.First();
+            _mediaPlayer.Pause();
+            _isPlaying = false;
+            TxtStatus.Text = _currentTrack is not null ? $"Paused: {_currentTrack.Name}" : "Paused";
+            UpdatePlayPauseIcon();
+            return;
         }
 
-        PlayTrack(_currentTrack);
+        if (_currentTrack is not null)
+        {
+            if (SongsListView.SelectedItem is Track selected && selected != _currentTrack)
+            {
+                PlayTrack(selected);
+            }
+            else
+            {
+                _mediaPlayer.Play();
+                _isPlaying = true;
+                TxtStatus.Text = $"Resumed: {_currentTrack.Name}";
+                UpdatePlayPauseIcon();
+            }
+            return;
+        }
+
+        var track = SongsListView.SelectedItem as Track ?? _displayedTracks.FirstOrDefault();
+        if (track is null) return;
+        PlayTrack(track);
     }
 
-    private void BtnPause_Click(object sender, RoutedEventArgs e)
+    private void BtnPrevious_Click(object sender, RoutedEventArgs e)
     {
-        _mediaPlayer.Pause();
-    }
+        if (_currentTrack is not null
+            && _mediaPlayer.NaturalDuration.HasTimeSpan
+            && _mediaPlayer.Position.TotalSeconds > 3)
+        {
+            _mediaPlayer.Position = TimeSpan.Zero;
+            return;
+        }
 
-    private void BtnStop_Click(object sender, RoutedEventArgs e)
-    {
-        _mediaPlayer.Stop();
+        if (_history.TryPop(out var previousTrack))
+        {
+            PlayTrack(previousTrack, addToHistory: false);
+            UpdateUiState();
+        }
+        else if (_currentTrack is not null)
+        {
+            _mediaPlayer.Position = TimeSpan.Zero;
+        }
     }
 
     private void BtnNext_Click(object sender, RoutedEventArgs e)
@@ -190,20 +211,19 @@ public partial class MainWindow : Window
 
     private void UpdateLoopButtonStyle()
     {
-        if (BtnLoopOne is null)
-            return;
-
-        BtnLoopOne.Background = _loopSingle
-            ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(64, 153, 255))
-            : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(31, 31, 31));
+        if (BtnLoopOne is null) return;
+        BtnLoopOne.Appearance = _loopSingle ? ControlAppearance.Primary : ControlAppearance.Secondary;
     }
 
+    private void UpdatePlayPauseIcon()
+    {
+        if (PlayPauseIcon is null) return;
+        PlayPauseIcon.Symbol = _isPlaying ? SymbolRegular.Pause20 : SymbolRegular.Play20;
+    }
 
     private void BtnShuffleAll_Click(object sender, RoutedEventArgs e)
     {
-        if (_allTracks.Count == 0)
-            return;
-
+        if (_allTracks.Count == 0) return;
         StartShuffle(_allTracks);
         TxtStatus.Text = $"Shuffle All started with {_shuffleQueue.Count + 1} tracks.";
     }
@@ -211,7 +231,8 @@ public partial class MainWindow : Window
     private void BtnShufflePlaylist_Click(object sender, RoutedEventArgs e)
     {
         IEnumerable<Track> targets;
-        if (PlaylistCombo.SelectedItem is string selected && selected != "All songs" && _playlists.TryGetValue(selected, out var playlistTracks))
+        if (PlaylistCombo.SelectedItem is string selected && selected != "All songs"
+            && _playlists.TryGetValue(selected, out var playlistTracks))
         {
             targets = playlistTracks;
         }
@@ -221,7 +242,11 @@ public partial class MainWindow : Window
         }
         else
         {
-            System.Windows.MessageBox.Show("Vui lòng chọn playlist hoặc chọn một bài trong playlist để shuffle.", "Shuffle Playlist", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(
+                "Vui lòng chọn playlist hoặc chọn một bài trong playlist để shuffle.",
+                "Shuffle Playlist",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
             return;
         }
 
@@ -232,8 +257,7 @@ public partial class MainWindow : Window
     private void StartShuffle(IEnumerable<Track> tracks)
     {
         var list = tracks.ToList();
-        if (list.Count == 0)
-            return;
+        if (list.Count == 0) return;
 
         Shuffle(list);
         _shuffleQueue = new Queue<Track>(list);
@@ -246,38 +270,47 @@ public partial class MainWindow : Window
         if (_shuffleQueue.Count == 0)
         {
             _currentTrack = null;
+            _isPlaying = false;
             TxtQueueInfo.Text = "Queue: 0 / 0";
             BtnNext.IsEnabled = false;
+            UpdatePlayPauseIcon();
             return;
         }
 
-        _currentTrack = _shuffleQueue.Dequeue();
-        PlayTrack(_currentTrack);
+        var next = _shuffleQueue.Dequeue();
+        PlayTrack(next);
         UpdateQueueInfo();
     }
 
-    private void PlayTrack(Track track)
+    private void PlayTrack(Track track, bool addToHistory = true)
     {
         try
         {
+            if (addToHistory && _currentTrack is not null && _currentTrack != track)
+                _history.Push(_currentTrack);
+
             _mediaPlayer.Open(new Uri(track.FilePath));
             _mediaPlayer.Play();
+            _isPlaying = true;
             TxtCurrentTrack.Text = track.Name;
             _currentTrack = track;
             UpdateQueueInfo();
+            UpdatePlayPauseIcon();
             BtnNext.IsEnabled = _shuffleQueue.Any();
+            BtnPrevious.IsEnabled = true;
         }
         catch
         {
-            System.Windows.MessageBox.Show($"Không thể phát bài hát: {track.Name}", "Playback Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(
+                $"Không thể phát bài hát: {track.Name}", "Playback Error",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         }
     }
 
     private void UpdateQueueInfo()
     {
         var total = _shuffleQueue.Count + (_currentTrack is null ? 0 : 1);
-        var remaining = _shuffleQueue.Count;
-        TxtQueueInfo.Text = $"Queue: {remaining} remaining / {total} total";
+        TxtQueueInfo.Text = $"Queue: {_shuffleQueue.Count} remaining / {total} total";
     }
 
     private void MediaPlayer_MediaOpened(object? sender, EventArgs e)
@@ -297,8 +330,7 @@ public partial class MainWindow : Window
 
     private void PositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (_isSeeking)
-            return;
+        if (_isSeeking) return;
 
         if (_mediaPlayer.NaturalDuration.HasTimeSpan)
         {
@@ -311,14 +343,17 @@ public partial class MainWindow : Window
     private void ProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (_isSeeking)
-        {
             TxtPosition.Text = TimeSpan.FromSeconds(ProgressSlider.Value).ToString("mm\\:ss");
-        }
     }
-
 
     private void ProgressSlider_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (sender is Slider slider)
+        {
+            var ratio = slider.ActualWidth <= 0 ? 0.0 : e.GetPosition(slider).X / slider.ActualWidth;
+            slider.Value = Math.Max(slider.Minimum, Math.Min(slider.Maximum,
+                slider.Minimum + ratio * (slider.Maximum - slider.Minimum)));
+        }
         _isSeeking = true;
     }
 
@@ -332,20 +367,19 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
+            _isPlaying = false;
             if (_loopSingle && _currentTrack is not null)
-            {
                 PlayTrack(_currentTrack);
-            }
             else
-            {
                 PlayNextFromQueue();
-            }
         });
     }
 
     private void MediaPlayer_MediaFailed(object? sender, ExceptionEventArgs e)
     {
-        Dispatcher.Invoke(() => System.Windows.MessageBox.Show($"Phát nhạc thất bại: {e.ErrorException?.Message}", "Media Error", MessageBoxButton.OK, MessageBoxImage.Warning));
+        Dispatcher.Invoke(() => System.Windows.MessageBox.Show(
+            $"Phát nhạc thất bại: {e.ErrorException?.Message}", "Media Error",
+            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning));
     }
 
     private static void Shuffle<T>(IList<T> list)
@@ -358,4 +392,3 @@ public partial class MainWindow : Window
         }
     }
 }
-

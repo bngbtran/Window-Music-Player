@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WindowMusicPlayer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5e8a6b2239917da91494ce2a02e0de288e5cb035")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ae1cd1af3743fd03a89060517a5a432a4f0504cb")]
 [assembly: System.Reflection.AssemblyProductAttribute("WindowMusicPlayer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WindowMusicPlayer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

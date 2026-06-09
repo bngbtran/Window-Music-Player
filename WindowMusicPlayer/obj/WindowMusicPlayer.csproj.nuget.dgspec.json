@@ -43,9 +43,9 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
-            "WPF.UI": {
+            "WPF-UI": {
               "target": "Package",
-              "version": "[3.4.2.7, )"
+              "version": "[3.0.4, )"
             }
           },
           "imports": [
