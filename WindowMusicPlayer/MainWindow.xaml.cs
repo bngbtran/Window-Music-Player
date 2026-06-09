@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Forms;
 using Wpf.Ui.Controls;
@@ -30,12 +31,26 @@ public partial class MainWindow : FluentWindow
     public MainWindow()
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => WindowState = System.Windows.WindowState.Maximized;
+        ApplyWindowIcon();
         SongsListView.ItemsSource = _displayedTracks;
         _mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
         _mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
         _mediaPlayer.MediaOpened += MediaPlayer_MediaOpened;
         _positionTimer.Tick += PositionTimer_Tick;
         _mediaPlayer.Volume = 1.0;
+    }
+
+    private void ApplyWindowIcon()
+    {
+        if (Resources["AppIcon"] is not DrawingImage drawing) return;
+        var dv = new DrawingVisual();
+        using (var dc = dv.RenderOpen())
+            dc.DrawImage(drawing, new Rect(0, 0, 64, 64));
+        var bmp = new RenderTargetBitmap(64, 64, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        bmp.Freeze();
+        Icon = bmp;
     }
 
     private void BtnOpenFolder_Click(object sender, RoutedEventArgs e)
@@ -107,10 +122,6 @@ public partial class MainWindow : FluentWindow
         var hasTracks = _allTracks.Count > 0;
         BtnShuffleAll.IsEnabled = hasTracks;
         BtnShufflePlaylist.IsEnabled = hasTracks;
-        BtnPlayPause.IsEnabled = hasTracks;
-        BtnNext.IsEnabled = _shuffleQueue.Any();
-        BtnPrevious.IsEnabled = hasTracks;
-        BtnLoopOne.IsEnabled = hasTracks;
         UpdateLoopButtonStyle();
         UpdatePlayPauseIcon();
     }
@@ -212,7 +223,16 @@ public partial class MainWindow : FluentWindow
     private void UpdateLoopButtonStyle()
     {
         if (BtnLoopOne is null) return;
-        BtnLoopOne.Appearance = _loopSingle ? ControlAppearance.Primary : ControlAppearance.Secondary;
+        if (_loopSingle)
+        {
+            BtnLoopOne.Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x68, 0x00, 0x70));
+            BtnLoopOne.Foreground = System.Windows.Media.Brushes.White;
+        }
+        else
+        {
+            BtnLoopOne.Background = System.Windows.Media.Brushes.Transparent;
+            BtnLoopOne.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0x68, 0x00, 0x70));
+        }
     }
 
     private void UpdatePlayPauseIcon()
@@ -272,7 +292,6 @@ public partial class MainWindow : FluentWindow
             _currentTrack = null;
             _isPlaying = false;
             TxtQueueInfo.Text = "Queue: 0 / 0";
-            BtnNext.IsEnabled = false;
             UpdatePlayPauseIcon();
             return;
         }
@@ -296,8 +315,6 @@ public partial class MainWindow : FluentWindow
             _currentTrack = track;
             UpdateQueueInfo();
             UpdatePlayPauseIcon();
-            BtnNext.IsEnabled = _shuffleQueue.Any();
-            BtnPrevious.IsEnabled = true;
         }
         catch
         {
