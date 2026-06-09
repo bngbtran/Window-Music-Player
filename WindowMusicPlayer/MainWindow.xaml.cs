@@ -23,6 +23,9 @@ public partial class MainWindow : FluentWindow
     private readonly Stack<Track> _history = new();
     private Queue<Track> _shuffleQueue = new();
     private string _rootFolder = string.Empty;
+    private static readonly string _settingsPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "WindowMusicPlayer", "lastfolder.txt");
     private Track? _currentTrack;
     private bool _isSeeking;
     private bool _isPlaying;
@@ -39,6 +42,12 @@ public partial class MainWindow : FluentWindow
         _mediaPlayer.MediaOpened += MediaPlayer_MediaOpened;
         _positionTimer.Tick += PositionTimer_Tick;
         _mediaPlayer.Volume = 1.0;
+        Loaded += (_, _) =>
+        {
+            var last = LoadLastFolder();
+            if (!string.IsNullOrEmpty(last) && Directory.Exists(last))
+                LoadMusicFromFolder(last);
+        };
     }
 
     private void ApplyWindowIcon()
@@ -63,6 +72,7 @@ public partial class MainWindow : FluentWindow
             return;
 
         _rootFolder = dialog.SelectedPath;
+        SaveLastFolder(_rootFolder);
         LoadMusicFromFolder(_rootFolder);
     }
 
@@ -115,6 +125,7 @@ public partial class MainWindow : FluentWindow
         PlaylistCombo.SelectedIndex = 0;
         TxtStatus.Text = $"Loaded {_allTracks.Count} tracks from: {rootPath}";
         UpdateUiState();
+        SaveLastFolder(rootPath);
     }
 
     private void UpdateUiState()
@@ -407,5 +418,21 @@ public partial class MainWindow : FluentWindow
             var j = rng.Next(i + 1);
             (list[i], list[j]) = (list[j], list[i]);
         }
+    }
+
+    private static void SaveLastFolder(string path)
+    {
+        var dir = Path.GetDirectoryName(_settingsPath)!;
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(_settingsPath, path);
+    }
+
+    private static string? LoadLastFolder()
+    {
+        try
+        {
+            return File.Exists(_settingsPath) ? File.ReadAllText(_settingsPath).Trim() : null;
+        }
+        catch { return null; }
     }
 }
